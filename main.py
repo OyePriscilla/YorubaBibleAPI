@@ -57,21 +57,27 @@ def get_passage(start: str = Query(...), end: str = Query(...)):
                         return {"passage": results}
     return {"passage": results}
 
+import re
 
 @app.get("/search")
 def word_search(query: str = Query(...)):
     results = []
-    word_pattern = re.compile(rf"\b{re.escape(query)}\b", re.IGNORECASE | re.UNICODE)
+    word_pattern = re.compile(rf"\b({re.escape(query)})\b", re.IGNORECASE | re.UNICODE)
 
     for section in ["Old", "New"]:
         for book, chapters in bible.get(section, {}).items():
             for chapter_str, verses in chapters.items():
                 for verse_data in verses:
-                    if word_pattern.search(verse_data["text"]):
+                    text = verse_data["text"]
+                    if word_pattern.search(text):
+                        highlighted = word_pattern.sub(r'<span style="color: blue;"><b>\1</b></span>', text)
                         results.append({
                             "book": book,
                             "chapter": int(chapter_str),
                             "verse": verse_data["verse"],
-                            "text": verse_data["text"]
+                            "text": text,
+                            "highlightedText": highlighted
                         })
     return {"results": results}
+
+
