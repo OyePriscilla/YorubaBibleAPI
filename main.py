@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import re
 
 app = FastAPI()
 
@@ -56,14 +57,17 @@ def get_passage(start: str = Query(...), end: str = Query(...)):
                         return {"passage": results}
     return {"passage": results}
 
+
 @app.get("/search")
 def word_search(query: str = Query(...)):
     results = []
+    word_pattern = re.compile(rf"\b{re.escape(query)}\b", re.IGNORECASE | re.UNICODE)
+
     for section in ["Old", "New"]:
         for book, chapters in bible.get(section, {}).items():
             for chapter_str, verses in chapters.items():
                 for verse_data in verses:
-                    if query.lower() in verse_data["text"].lower():
+                    if word_pattern.search(verse_data["text"]):
                         results.append({
                             "book": book,
                             "chapter": int(chapter_str),
